@@ -112,7 +112,7 @@ jobs:
         max-score: 15
     
     - name: Неизвестная операция
-      id: unknown_test
+      id: unk_test
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: Неизвестная операция
@@ -131,12 +131,13 @@ jobs:
       id: reporter
       uses: classroom-resources/autograding-grading-reporter@v1
       env:
-        ADD_RESULTS: "${{steps.add.outputs.result}}"
-        SUB_RESULTS: "${{steps.sub.outputs.result}}"
-        MUL_RESULTS: "${{steps.mul.outputs.result}}"
-        DIV_RESULTS: "${{steps.div.outputs.result}}"
-        POW_RESULTS: "${{steps.pow.outputs.result}}"
-        UNK_RESULTS: "${{steps.unk.outputs.result}}"
+        ADD_RESULTS: "${{steps.add_test.outputs.result}}"
+        SUB_RESULTS: "${{steps.sub_test.outputs.result}}"
+        MUL_RESULTS: "${{steps.mul_test.outputs.result}}"
+        DIV_RESULTS: "${{steps.div_test.outputs.result}}"
+        POW_RESULTS: "${{steps.pow_test.outputs.result}}"
+        DIV_ZERO_SCORE="${{ steps.div_zero_test.outputs.score }}"
+        UNK_RESULTS: "${{steps.unk_test.outputs.result}}"
       with:
         runners: add,sub,mul,div,pow,unk
         max-total-score: 100
@@ -154,7 +155,7 @@ jobs:
         DIV_SCORE="${{ steps.div_test.outputs.score || 15 }}"
         POW_SCORE="${{ steps.pow_test.outputs.score || 15 }}"
         DIV_ZERO_SCORE="${{ steps.div_zero_test.outputs.score || 15 }}"
-        UNKNOWN_SCORE="${{ steps.unknown_test.outputs.score || 10 }}"
+        UNKNOWN_SCORE="${{ steps.unk_test.outputs.score || 10 }}"
         
         # Добавляем статусы (предполагаем, что все пройдены)
         ADD_STATUS="✅"
