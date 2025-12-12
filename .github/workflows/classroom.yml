@@ -20,7 +20,6 @@ jobs:
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: Сложение
-        setup-command: 'add'
         command: python task.py
         input: |
           5
@@ -36,7 +35,6 @@ jobs:
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: Вычитание
-        setup-command: 'sub'
         command: python task.py
         input: |
           10
@@ -52,7 +50,6 @@ jobs:
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: Умножение
-        setup-command: 'mul'
         command: python task.py
         input: |
           7
@@ -68,7 +65,6 @@ jobs:
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: Деление
-        setup-command: 'div'
         command: python task.py
         input: |
           15
@@ -84,7 +80,6 @@ jobs:
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: Степень
-        setup-command: ''
         command: python task.py
         input: |
           2
@@ -100,7 +95,7 @@ jobs:
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: Деление на ноль
-        setup-command: ''
+        setup-command: 'div-2-zero'
         command: python task.py
         input: |
           10
@@ -116,7 +111,6 @@ jobs:
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: Неизвестная операция
-        setup-command: ''
         command: python task.py
         input: |
           5
@@ -136,7 +130,7 @@ jobs:
         MUL_RESULTS: "${{steps.mul_test.outputs.result}}"
         DIV_RESULTS: "${{steps.div_test.outputs.result}}"
         POW_RESULTS: "${{steps.pow_test.outputs.result}}"
-        DIV_ZERO_SCORE: "${{ steps.div_zero_test.outputs.score }}"
+        DIV_ZERO_SCORE: "${{ steps.div_zero_test.outputs.result }}"
         UNK_RESULTS: "${{steps.unk_test.outputs.result}}"
       with:
         runners: add_test,sub_test,mul_test,div_test,pow_test,div_zero_test,unk_test
