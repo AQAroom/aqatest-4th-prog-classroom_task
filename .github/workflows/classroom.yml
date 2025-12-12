@@ -130,52 +130,15 @@ jobs:
     - name: Autograding Reporter
       id: reporter
       uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        ADD_RESULTS: "${{steps.add.outputs.result}}"
+        SUB_RESULTS: "${{steps.sub.outputs.result}}"
+        MUL_RESULTS: "${{steps.mul.outputs.result}}"
+        DIV_RESULTS: "${{steps.div.outputs.result}}"
+        POW_RESULTS: "${{steps.pow.outputs.result}}"
+        UNK_RESULTS: "${{steps.unk.outputs.result}}"
       with:
-        runners: |
-          {
-            "add": {
-              "run": "python task.py",
-              "input": "5\n+\n3\n",
-              "output": "8",
-              "points": 15
-            },
-            "sub": {
-              "run": "python task.py",
-              "input": "10\n-\n4\n",
-              "output": "6",
-              "points": 15
-            },
-            "mul": {
-              "run": "python task.py",
-              "input": "7\n*\n6\n",
-              "output": "42",
-              "points": 15
-            },
-            "div": {
-              "run": "python task.py",
-              "input": "15\n/\n3\n",
-              "output": "5",
-              "points": 15
-            },
-            "pow": {
-              "run": "python task.py",
-              "input": "2\n^\n3\n",
-              "output": "8",
-              "points": 15
-            },
-            "div_zero": {
-              "run": "python task.py",
-              "input": "10\n/\n0\n",
-              "output": "error",
-              "points": 15
-            },
-            "unknown": {
-              "run": "python task.py",
-              "input": "5\n%\n3\n",
-              "output": "неизвестная операция",
-              "points": 10
-            }
-          }
+        runners: add,sub,mul,div,pow,unk
         max-total-score: 100
     
     - name: Generate Summary
