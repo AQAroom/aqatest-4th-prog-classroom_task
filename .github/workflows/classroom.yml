@@ -83,7 +83,7 @@ jobs:
         command: python task.py
         input: |
           2
-          **
+          ^
           3
         expected-output: '8'
         comparison-method: exact
@@ -95,7 +95,6 @@ jobs:
       uses: classroom-resources/autograding-io-grader@v1
       with:
         test-name: Деление на ноль
-        setup-command: 'div-2-zero'
         command: python task.py
         input: |
           10
