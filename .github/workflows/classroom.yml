@@ -14,7 +14,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    # Тесты с уникальными ID для сбора результатов
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    
+    # Тесты
     - name: Сложение
       id: add_test
       uses: classroom-resources/autograding-io-grader@v1
@@ -100,7 +105,7 @@ jobs:
           10
           /
           0
-        expected-output: error
+        expected-output: 'error'
         comparison-method: contains
         timeout: 5
         max-score: 15
@@ -115,69 +120,56 @@ jobs:
           5
           %
           3
-        expected-output: Неизвестная операция
+        expected-output: 'Неизвестная операция'
         comparison-method: contains
         timeout: 5
         max-score: 10
     
-    # Шаг декодирования результатов - Создаем JSON файлы
-    - name: Create Result Files
+    # СОБСТВЕННАЯ ГЕНЕРАЦИЯ ОТЧЕТА - без buggy репортера
+    - name: Generate Test Report
+      id: generate_report
       run: |
-        echo '${{ steps.add_test.outputs.result }}' | base64 -d > add_results.json
-        echo '${{ steps.sub_test.outputs.result }}' | base64 -d > sub_results.json
-        echo '${{ steps.mul_test.outputs.result }}' | base64 -d > mul_results.json
-        echo '${{ steps.div_test.outputs.result }}' | base64 -d > div_results.json
-        echo '${{ steps.pow_test.outputs.result }}' | base64 -d > pow_results.json
-        echo '${{ steps.div_zero_test.outputs.result }}' | base64 -d > div_zero_results.json
-        echo '${{ steps.unk_test.outputs.result }}' | base64 -d > unk_results.json
+        # Функция для безопасного получения баллов
+        get_score() {
+          local step_id="$1"
+          local default="${2:-0}"
+          # Используем eval для доступа к outputs
+          local score=$(eval echo \${{ steps.${step_id}.outputs.score }})
+          echo "${score:-$default}"
+        }
         
-        # Читаем файлы в переменные
-        echo "ADD_RESULTS=$(cat add_results.json | jq -c . | sed 's/"/\\"/g')" >> $GITHUB_ENV
-        echo "SUB_RESULTS=$(cat sub_results.json | jq -c . | sed 's/"/\\"/g')" >> $GITHUB_ENV
-        echo "MUL_RESULTS=$(cat mul_results.json | jq -c . | sed 's/"/\\"/g')" >> $GITHUB_ENV
-        echo "DIV_RESULTS=$(cat div_results.json | jq -c . | sed 's/"/\\"/g')" >> $GITHUB_ENV
-        echo "POW_RESULTS=$(cat pow_results.json | jq -c . | sed 's/"/\\"/g')" >> $GITHUB_ENV
-        echo "DIV_ZERO_RESULTS=$(cat div_zero_results.json | jq -c . | sed 's/"/\\"/g')" >> $GITHUB_ENV
-        echo "UNK_RESULTS=$(cat unk_results.json | jq -c . | sed 's/"/\\"/g')" >> $GITHUB_ENV
-    
-    - name: Autograding Reporter
-      id: reporter
-      uses: classroom-resources/autograding-grading-reporter@v1
-      env:
-        ADD_RESULTS: ${{ env.ADD_RESULTS }}
-        SUB_RESULTS: ${{ env.SUB_RESULTS }}
-        MUL_RESULTS: ${{ env.MUL_RESULTS }}
-        DIV_RESULTS: ${{ env.DIV_RESULTS }}
-        POW_RESULTS: ${{ env.POW_RESULTS }}
-        DIV_ZERO_RESULTS: ${{ env.DIV_ZERO_RESULTS }}
-        UNK_RESULTS: ${{ env.UNK_RESULTS }}
-      with:
-        runners: '["add_test","sub_test","mul_test","div_test","pow_test","div_zero_test","unk_test"]'
-    
-    - name: Generate Summary
-      run: |
-        # Получаем общие результаты из reporter
-        TOTAL_POINTS="${{ steps.reporter.outputs.totalPoints || 100 }}"
-        MAX_POINTS="${{ steps.reporter.outputs.maxPoints || 100 }}"
+        # Получаем баллы за каждый тест
+        ADD_SCORE=$(get_score "add_test" "0")
+        SUB_SCORE=$(get_score "sub_test" "0")
+        MUL_SCORE=$(get_score "mul_test" "0")
+        DIV_SCORE=$(get_score "div_test" "0")
+        POW_SCORE=$(get_score "pow_test" "0")
+        DIV_ZERO_SCORE=$(get_score "div_zero_test" "0")
+        UNKNOWN_SCORE=$(get_score "unk_test" "0")
         
-        # Собираем результаты из каждого теста
-        ADD_SCORE="${{ steps.add_test.outputs.score || 15 }}"
-        SUB_SCORE="${{ steps.sub_test.outputs.score || 15 }}"
-        MUL_SCORE="${{ steps.mul_test.outputs.score || 15 }}"
-        DIV_SCORE="${{ steps.div_test.outputs.score || 15 }}"
-        POW_SCORE="${{ steps.pow_test.outputs.score || 15 }}"
-        DIV_ZERO_SCORE="${{ steps.div_zero_test.outputs.score || 15 }}"
-        UNKNOWN_SCORE="${{ steps.unk_test.outputs.score || 10 }}"
+        # Вычисляем итоги
+        TOTAL_POINTS=$((ADD_SCORE + SUB_SCORE + MUL_SCORE + DIV_SCORE + POW_SCORE + DIV_ZERO_SCORE + UNKNOWN_SCORE))
+        MAX_POINTS=100
         
-        # Добавляем статусы (предполагаем, что все пройдены)
-        ADD_STATUS="✅"
-        SUB_STATUS="✅"
-        MUL_STATUS="✅"
-        DIV_STATUS="✅"
-        POW_STATUS="✅"
-        DIV_ZERO_STATUS="✅"
-        UNKNOWN_STATUS="✅"
+        # Определяем статусы
+        get_status() {
+          local score="$1"
+          if [ "$score" -gt 0 ]; then
+            echo "✅"
+          else
+            echo "❌"
+          fi
+        }
         
+        ADD_STATUS=$(get_status "$ADD_SCORE")
+        SUB_STATUS=$(get_status "$SUB_SCORE")
+        MUL_STATUS=$(get_status "$MUL_SCORE")
+        DIV_STATUS=$(get_status "$DIV_SCORE")
+        POW_STATUS=$(get_status "$POW_SCORE")
+        DIV_ZERO_STATUS=$(get_status "$DIV_ZERO_SCORE")
+        UNKNOWN_STATUS=$(get_status "$UNKNOWN_SCORE")
+        
+        # Генерация красивого отчета в GitHub Actions Summary
         echo "## 📊 Результаты тестирования" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🧪 Детализация тестов" >> $GITHUB_STEP_SUMMARY
@@ -194,7 +186,11 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # Расчет процента
-        PERCENTAGE=$((TOTAL_POINTS * 100 / MAX_POINTS))
+        if [ "$MAX_POINTS" -gt 0 ]; then
+          PERCENTAGE=$((TOTAL_POINTS * 100 / MAX_POINTS))
+        else
+          PERCENTAGE=0
+        fi
         
         echo "### 🏆 Итоговая статистика" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -222,3 +218,34 @@ jobs:
         
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "*Автоматическая проверка завершена*" >> $GITHUB_STEP_SUMMARY
+    
+    # Дополнительно: проверка чека (опционально)
+    - name: Create Check Run
+      if: always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const results = JSON.parse('${{ steps.generate_report.outputs.test_results }}');
+          
+          const conclusion = results.total_points === results.max_points ? 'success' : 
+                           results.percentage >= 60 ? 'neutral' : 'failure';
+          
+          const summary = `Набрано ${results.total_points} из ${results.max_points} баллов (${results.percentage}%)`;
+          
+          const details = results.tests.map(test => 
+            `- ${test.name}: ${test.passed ? '✅' : '❌'} ${test.score}/${test.max_score}`
+          ).join('\n');
+          
+          await github.rest.checks.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            name: 'Autograding Results',
+            head_sha: context.sha,
+            status: 'completed',
+            conclusion: conclusion,
+            output: {
+              title: 'Результаты автоматической проверки',
+              summary: summary,
+              text: details
+            }
+          });
